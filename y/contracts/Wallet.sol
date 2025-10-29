@@ -14,6 +14,16 @@ contract MultiSignPaymentWallet {
         Approval[] approvalList;
     }
 
+    struct Withdrawal {
+    address executor;
+    uint256 amount;
+    uint256 timestamp;
+    }
+    Withdrawal[] public withdrawalHistory;
+    
+    uint256 public executedTxCount;
+    mapping(uint256 => uint256) public executedTxIds; 
+
     struct Approval {
         address approver;
         uint256 timestamp;
@@ -132,6 +142,28 @@ contract MultiSignPaymentWallet {
         emit SubmitTransaction(txId, _to, _amount);
         return txId;
     }
+    function withdraw(address payable _to, uint256 _amount)
+    external
+    onlyOwner
+    nonReentrant
+{
+    require(_to != address(0), "Direccion invalida");
+    require(address(this).balance >= _amount, "Fondos insuficientes");
+
+    (bool success, ) = _to.call{value: _amount}("");
+    require(success, "Fallo en la transferencia");
+
+    emit DirectWithdrawal(msg.sender, _to, _amount);
+
+    withdrawalHistory.push(Withdrawal({
+    executor: msg.sender,
+    amount: _amount,
+    timestamp: block.timestamp
+    }));
+}
+
+// Evento para registrar los retiros manuales
+event DirectWithdrawal(address indexed owner, address indexed to, uint256 amount);
 
     function approveTransaction(uint256 _txId) external onlyOwner {
         Transaction storage txn = transactions[_txId];
@@ -175,9 +207,14 @@ contract MultiSignPaymentWallet {
 
         txn.executed = true;
         payable(txn.to).transfer(txn.amount);
+        // se puso un id unico autoincrementable
+         uint256 executionId = executedTxCount++;
+        executedTxIds[_txId] = executionId;
 
         emit ExecuteTransaction(_txId);
+        emit TransactionExecutedWithId(_txId, executionId, txn.to, txn.amount);
     }
+    event TransactionExecutedWithId(uint256 indexed txId, uint256 indexed executionId, address to, uint256 amount);
 
     function releasePayments() external onlyOwner {
         uint256 balance = address(this).balance;
@@ -188,7 +225,13 @@ contract MultiSignPaymentWallet {
             uint256 payment = (balance * shares[payee]) / totalShares;
             payable(payee).transfer(payment);
             emit PaymentReleased(payee, payment);
+            withdrawalHistory.push(Withdrawal({
+            executor: msg.sender,
+            amount: payment,
+            timestamp: block.timestamp
+            }));
         }
+        
     }
 
     function getOwners() external view returns (address[] memory) {
@@ -206,10 +249,16 @@ contract MultiSignPaymentWallet {
     function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
+    function getWithdrawalCount() public view returns (uint256) {
+        return withdrawalHistory.length;
+    }
+    function getWithdrawal(uint256 index) public view returns (address, uint256, uint256) {
+    require(index < withdrawalHistory.length, "Indice invalido");
+    Withdrawal memory w = withdrawalHistory[index];
+    return (w.executor, w.amount, w.timestamp);
+    }
 
-    // ================================
-    // FUNCIONES DE PRODUCTOS
-    // ================================
+    
     function addProduct(string memory _name, uint _price) external onlyOwner {
         require(_price > 0, "El precio debe ser mayor a 0");
         uint productId = nextProductId++;

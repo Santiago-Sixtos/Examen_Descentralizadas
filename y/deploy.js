@@ -70,12 +70,12 @@ async function main() {
   ];
 
   // Participaciones (deben ser números)
-  const shares = [80, 20];
+  const shares = [70, 30];
 
   // Número de aprobaciones requeridas
   const requiredApprovals = 2;
 
-  console.log("🚀 Desplegando contrato MultiSignPaymentWallet...");
+  console.log("Desplegando contrato MultiSignPaymentWallet...");
 
   // Crea una instancia del contrato compilado
   const MultiSignPaymentWallet = await ethers.getContractFactory("MultiSignPaymentWallet");
@@ -86,13 +86,13 @@ async function main() {
   // Espera a que el contrato se confirme en la red
   await wallet.waitForDeployment();
 
-  console.log(`✅ Contrato desplegado en: ${await wallet.getAddress()}`);
+  console.log(`Contrato desplegado en: ${await wallet.getAddress()}`);
 }
 
 // Manejo de errores
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error("❌ Error en el despliegue:", error);
+    console.error("Error en el despliegue:", error);
     process.exit(1);
   });

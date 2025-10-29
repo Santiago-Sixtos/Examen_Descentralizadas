@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const walletController = require('../Controladores/wallet');
 
-// 🪙 Depositar
+
 router.post('/deposit', async (req, res) => {
     try {
         const { amount, account } = req.body;
@@ -13,7 +13,7 @@ router.post('/deposit', async (req, res) => {
     }
 });
 
-// 💸 Enviar transacción
+
 router.post('/submit', async (req, res) => {
     try {
         const { to, amount, account } = req.body;
@@ -24,7 +24,7 @@ router.post('/submit', async (req, res) => {
     }
 });
 
-// ✅ Aprobar
+
 router.post('/approve', async (req, res) => {
     try {
         const { transactionId, account } = req.body;
@@ -35,7 +35,7 @@ router.post('/approve', async (req, res) => {
     }
 });
 
-// ⚙️ Ejecutar
+
 router.post('/execute', async (req, res) => {
     try {
         const { transactionId, account } = req.body;
@@ -46,7 +46,7 @@ router.post('/execute', async (req, res) => {
     }
 });
 
-// 💵 Liberar pagos
+
 router.post('/release', async (req, res) => {
     try {
         const { account } = req.body;
@@ -57,7 +57,7 @@ router.post('/release', async (req, res) => {
     }
 });
 
-// 📊 Obtener transacciones
+
 router.get('/transactions', async (req, res) => {
     try {
         const transactions = await walletController.getTransactions();
@@ -67,7 +67,7 @@ router.get('/transactions', async (req, res) => {
     }
 });
 
-// 💰 Obtener balance
+
 router.get('/balance', async (req, res) => {
     try {
         const balance = await walletController.getBalance();
@@ -86,7 +86,7 @@ router.post('/product/add', async (req, res) => {
     }
 });
 
-// 💰 Comprar producto
+
 router.post('/product/buy', async (req, res) => {
     try {
         const { productId, amountEth, account } = req.body;
@@ -97,7 +97,7 @@ router.post('/product/buy', async (req, res) => {
     }
 });
 
-// 🚫 Deshabilitar producto
+
 router.post('/product/disable', async (req, res) => {
     try {
         const { productId, account } = req.body;
@@ -108,11 +108,29 @@ router.post('/product/disable', async (req, res) => {
     }
 });
 
-// 📦 Obtener todos los productos
+
 router.get('/products', async (req, res) => {
     try {
         const products = await walletController.getAllProducts();
         res.json({ success: true, products });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/withdraw', async (req, res) => {
+    try {
+        const { to, amount, account } = req.body;
+        const receipt = await walletController.withdrawFunds(to, amount, account);
+        res.json({ success: true, receipt });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+router.get('/withdrawals', async (req, res) => {
+    try {
+        const result = await walletController.getWithdrawals();
+        res.json(result);
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
